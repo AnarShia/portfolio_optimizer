@@ -65,8 +65,8 @@ import numpy as np
 import pandas as pd
 
 # input k portfolio 1 dataset comprising 15 Dow stocks
-Rows = 1259  # excluding header
-Columns = 15  # excluding date
+Rows = 143  # excluding header
+Columns = 10  # excluding date
 
 semboller = ["AAPL", "INTC", "MSFT", "GOOGL", "AMZN", "PYPL", "META", "NFLX", "NVDA", "TSLA"]
 baslangic_tarih = '2023-01-01'
@@ -102,3 +102,96 @@ meanReturns = np.mean(arReturns, axis=0)
 covReturns = np.cov(arReturns, rowvar=False)
 print('\nMean Returns:\n', meanReturns)
 print('\nVariance-Covariance Matrix of Returns:\n', covReturns)
+
+# function to handle bi-criterion portfolio optimization with constraints
+
+# dependencies
+import numpy as np
+from scipy import optimize
+
+
+def BiCriterionFunctionOptmzn(MeanReturns, CovarReturns, RiskAversParam, PortfolioSize):
+    def f(x, MeanReturns, CovarReturns, RiskAversParam, PortfolioSize):
+        PortfolioVariance = np.matmul(np.matmul(x, CovarReturns), x.T)
+        PortfolioExpReturn = np.matmul(np.array(MeanReturns), x.T)
+        func = RiskAversParam * PortfolioVariance - (1 - RiskAversParam) * PortfolioExpReturn
+        return func
+
+    def ConstraintEq(x):
+        A = np.ones(x.shape)
+        b = 1
+        constraintVal = np.matmul(A, x.T) - b
+        return constraintVal
+
+    def ConstraintIneqUpBounds(x):
+        A = [[0, 0, 0, 0, 0, 1, 0, 1, 1, 0], [1, 1, 1, 1, 1, 0, 1, 0, 0, 1]]
+        bUpBounds = np.array([0.6, 0.4]).T
+        constraintValUpBounds = bUpBounds - np.matmul(A, x.T)
+        return constraintValUpBounds
+
+    def ConstraintIneqLowBounds(x):
+        A = [[0, 0, 0, 0, 0, 1, 0, 1, 1, 0], [1, 1, 1, 1, 1, 0, 1, 0, 0, 1]]
+        bLowBounds = np.array([0.01, 0.01]).T
+        constraintValLowBounds = np.matmul(A, x.T) - bLowBounds
+        return constraintValLowBounds
+
+    xinit = np.repeat(0.01, PortfolioSize)
+    cons = ({'type': 'eq', 'fun': ConstraintEq},
+            {'type': 'ineq', 'fun': ConstraintIneqUpBounds},
+            {'type': 'ineq', 'fun': ConstraintIneqLowBounds})
+    bnds = [(0, 0.1), (0, 0.1), (0, 0.1), (0, 0.1), (0, 0.1), (0, 1), (0, 0.1), (0, 1), (0, 1), (0, 0.1)]
+
+    opt = optimize.minimize(f, x0=xinit, args=(MeanReturns, CovarReturns,
+                                               RiskAversParam, PortfolioSize),
+                            method='SLSQP', bounds=bnds, constraints=cons,
+                            tol=10 ** -3)
+    print(opt)
+    return opt
+
+
+# obtain optimal portfolios for the constrained portfolio optimization model
+# Maximize returns and Minimize risk with fully invested, bound and
+# class constraints
+
+# set portfolio size
+portfolioSize = Columns
+
+# initialization
+xOptimal = []
+minRiskPoint = []
+expPortfolioReturnPoint = []
+
+for points in range(0, 60):
+    riskAversParam = points / 60.0
+    result = BiCriterionFunctionOptmzn(meanReturns, covReturns, riskAversParam, \
+                                       portfolioSize)
+    xOptimal.append(result.x)
+
+# compute annualized risk and return  of the optimal portfolios for trading days = 251
+xOptimalArray = np.array(xOptimal)
+minRiskPoint = np.diagonal(np.matmul((np.matmul(xOptimalArray, covReturns)), \
+                                     np.transpose(xOptimalArray)))
+riskPoint = np.sqrt(minRiskPoint * 251)
+expPortfolioReturnPoint = np.matmul(xOptimalArray, meanReturns)
+retPoint = 251 * np.array(expPortfolioReturnPoint)
+
+# set precision for printing results
+np.set_printoptions(precision=3, suppress=True)
+
+# display optimal portfolio results
+print("Optimal weights of the efficient set portfolios\n:", xOptimalArray)
+print("\nAnnualized Risk and Return of the efficient set portfolios:\n", np.c_[riskPoint, retPoint])
+
+import matplotlib.pyplot as plt
+
+# Graph Efficient Frontier for the constrained portfolio model
+NoPoints = riskPoint.size
+
+colours = "blue"
+area = np.pi * 3
+
+plt.title('Efficient Frontier for constrained k-portfolio 1 of Dow stocks')
+plt.xlabel('Annualized Risk(%)')
+plt.ylabel('Annualized Expected Portfolio Return(%)')
+plt.scatter(riskPoint, retPoint, s=area, c=colours, alpha=0.5)
+plt.show()
