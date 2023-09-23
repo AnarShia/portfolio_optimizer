@@ -9,8 +9,6 @@ import os
 import yfinance as yf
 yf.pdr_override()
 
-
-print("burada başladı")
 def get_portfolio_variance(weights):
   return weights.dot(cov).dot(weights)
 
