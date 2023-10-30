@@ -5,12 +5,13 @@
 import numpy as np
 import pandas as pd
 
-from InputFile import yfinance_veri_cek
+from InputFile import yfinance_veri_cek, yfinance_veri_cek2
 
 # input stock prices dataset
-semboller = ['THYAO.IS', 'GARAN.IS', 'AAPL', 'AMZN', 'CRM']
-baslangic_tarih = '2023-01-01'
-bitis_tarih = '2023-08-01'
+semboller = ["IHT", "IVF", "KPC", "KPU", "MPS", "OHK", "RBH", "RHS", "ST1", "TI3", "ZPE", "ADP", "AKU", "DHJ", "GAE",
+             "HBU", "ICZ", "MMH", "TAU", "TIE", "TTE", "YAS", "YCP", "YEF", "YHZ", "ZLH", "NNF", "TLZ"];
+baslangic_tarih = '2023-08-20'
+bitis_tarih = '2023-09-20'
 frekans = '1mo'
 
 veriler_df = yfinance_veri_cek(

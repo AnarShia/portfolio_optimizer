@@ -79,7 +79,7 @@ def StockReturnsComputing(StockPrice, Rows, Columns):
     return StockReturn
 
 
-semboller = ['THYAO.IS', 'GARAN.IS', 'AAPL', 'AMZN', 'CRM']
+semboller = ["AAPL", "INTC", "MSFT", "GOOGL", "AMZN", "PYPL", "META", "NFLX", "NVDA", "TSLA"]
 baslangic_tarih = '2023-01-01'
 bitis_tarih = '2023-08-01'
 frekans = '1mo'
